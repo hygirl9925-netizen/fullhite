@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시공후기 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.tabs a{padding:10px 16px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+.tabs a.on{color:var(--fg);border-color:var(--accent)}
+.score{display:flex;gap:28px;align-items:center;flex-wrap:wrap;margin-bottom:24px}
+.score .big{font-family:var(--display);font-size:3rem;color:var(--accent);line-height:1}
+.bars{display:grid;gap:4px;min-width:220px;flex:1;max-width:360px}
+.bars div{display:grid;grid-template-columns:30px 1fr 30px;gap:8px;align-items:center;font-size:.82rem;color:var(--muted)}
+.bars i{height:8px;border-radius:4px;background:var(--surface);position:relative;overflow:hidden}
+.bars i b{position:absolute;inset:0 auto 0 0;background:var(--accent)}
+.list{display:grid;gap:16px}
+.rv{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:8px}
+.rv .meta{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
+.stars{color:#d49a2a;letter-spacing:2px}
+.rv h3{font-family:var(--body);font-size:1.05rem}
+.rv p{margin:0;color:var(--muted)}
+.rv a{font-size:.85rem;color:var(--accent);font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <p class="eyebrow">GALLERY</p>
+    <h1>시공후기</h1>
+    <p class="lead">설치를 마친 고객님이 직접 남긴 후기입니다.</p>
+  </div>
+  <nav class="tabs"><a href="cases.html">시공사례</a><a href="reviews.html" class="on">시공후기</a></nav>
+  <div class="score" id="score"></div>
+  <div class="chips" id="sort" style="margin-bottom:18px"></div>
+  <div class="list" id="list"></div>
+</main>
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const avg = REVIEWS.reduce((s,r)=>s+r.stars,0)/REVIEWS.length;
+$('score').innerHTML = `<div><div class="big num">${avg.toFixed(1)}</div><div class="stars">${'★'.repeat(Math.round(avg))}</div><div class="small">후기 ${REVIEWS.length}건</div></div>
+  <div class="bars">${[5,4,3,2,1].map(s=>{const n=REVIEWS.filter(r=>r.stars===s).length;return `<div><span>${s}점</span><i><b style="width:${n/REVIEWS.length*100}%"></b></i><span class="num">${n}</span></div>`}).join('')}</div>`;
+let sort = '최신순';
+function render(){
+  $('sort').innerHTML = ['최신순','별점 높은순'].map(v=>`<button type="button" class="chip" aria-pressed="${sort===v}">${v}</button>`).join('');
+  const list = [...REVIEWS].sort(sort==='최신순' ? (a,b)=>b.date.localeCompare(a.date) : (a,b)=>b.stars-a.stars);
+  $('list').innerHTML = list.map(r=>`<article class="rv">
+    <div class="meta"><span class="stars" aria-label="별점 ${r.stars}점">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</span><span>${r.name} · ${r.date}</span></div>
+    <h3>${r.title}</h3><p>${r.body}</p>
+    <a href="cases.html">시공사례 No.${r.case} 보기 →</a></article>`).join('');
+}
+$('sort').onclick = e => { const b = e.target.closest('.chip'); if(b){ sort = b.textContent; render(); } };
+render();
+</script>
+</body>
+</html>

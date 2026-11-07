@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>주문 조회 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.lookup{max-width:460px;display:grid;gap:14px}
+.orders{display:grid;gap:16px;margin-top:28px}
+.order{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:12px}
+.order .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.order .no{font-family:var(--display);font-size:1.2rem}
+.status{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:.78rem;text-align:center;color:var(--muted)}
+.status span{padding-top:10px;border-top:4px solid var(--line)}
+.status span.on{border-color:var(--accent);color:var(--fg);font-weight:600}
+.order table{width:100%;border-collapse:collapse;font-size:.88rem}
+.order td{padding:6px 0;border-bottom:1px dashed var(--line)}
+.order td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <p class="eyebrow">MY</p>
+    <h1 id="title">마이페이지</h1>
+    <p class="lead" id="sub">카카오로 로그인하면 내 주문을 바로 볼 수 있습니다.</p>
+  </div>
+
+  <section id="member" hidden>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div><b id="uname"></b><div class="small" id="uinfo"></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="admin.html" id="adminLink" hidden>관리자 페이지</a><button class="btn" id="logoutBtn" type="button">로그아웃</button></div>
+    </div>
+    <h2 style="font-size:1.25rem;margin:28px 0 0">내 주문</h2>
+    <div class="orders" id="myOrders"></div>
+  </section>
+
+  <section id="loginBox" class="card lookup" style="margin-bottom:24px" hidden>
+    <b>회원이신가요?</b>
+    <a class="btn kakao-btn lg" href="login.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오로 시작하기</a>
+  </section>
+
+  <h2 id="guest" style="font-size:1.25rem;margin:36px 0 14px">비회원 주문 조회</h2>
+  <form class="card lookup" id="f">
+    <label for="no">신청번호<input id="no" placeholder="예: LT261107-1234" autocomplete="off"></label>
+    <label for="ph">연락처<input id="ph" inputmode="tel" placeholder="010-0000-0000"></label>
+    <p class="small" id="err" style="color:var(--warn);margin:0"></p>
+    <button class="btn primary block" type="submit">조회하기</button>
+    <p class="small" style="margin:0">신청번호를 잊으셨다면 카카오톡 채널로 이름과 연락처를 보내 주세요.</p>
+  </form>
+  <div class="orders" id="orders"></div>
+</main>
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const STEPS = ['신청 접수','도면 확정·결제','일정 확정','설치 완료'];
+const $ = id => document.getElementById(id);
+function card(o){
+  const i = STEPS.indexOf(o.status);
+  const e = o.estimate || {};
+  return `<article class="order">
+    <div class="top"><span class="no">${o.order_no}</span><span class="small">${String(o.created_at).slice(0,10)} 신청${o.wish_date?` · 희망일 ${o.wish_date}`:''}</span></div>
+    ${o.status==='취소' ? '<p class="notice" style="margin:0">취소된 신청입니다.</p>'
+      : `<div class="status">${STEPS.map((s,k)=>`<span class="${k<=i?'on':''}">${s}</span>`).join('')}</div>`}
+    <div class="small">${e.use||''} · ${e.shape||''} · ${colorName(FRAME_COLORS,e.frame)} / ${colorName(SHELF_COLORS,e.shelf)} · ${e.region||''}</div>
+    <table>${(e.rows||[]).map(([n,v])=>`<tr><td>${n}</td><td>${won(v)}</td></tr>`).join('')}
+      <tr><td><b>예상 금액</b></td><td><b>${won(e.total||0)}</b></td></tr></table>
+  </article>`;
+}
+(async () => {
+  const u = await currentUser();
+  if(!u){ $('loginBox').hidden = false; return; }
+  $('member').hidden = false;
+  $('title').textContent = `${displayName(u)}님`;
+  $('sub').textContent = '주문 진행 상황과 견적 내역을 확인하세요.';
+  $('uname').textContent = displayName(u);
+  $('uinfo').textContent = `카카오 로그인${u.email ? ' · ' + u.email : ''} · ${u.created_at.slice(0,10)} 가입`;
+  $('logoutBtn').onclick = logout;
+  sb.rpc('is_admin').then(({data}) => { if(data) $('adminLink').hidden = false; });
+  try {
+    const list = await myOrders();
+    $('myOrders').innerHTML = list.length ? list.map(card).join('')
+      : '<div class="card" style="text-align:center"><p class="muted" style="margin:0 0 12px">아직 주문 내역이 없습니다.</p><a class="btn primary" href="estimate.html">예상 견적 계산하기</a></div>';
+  } catch(e){ $('myOrders').innerHTML = `<p class="notice">${e.message}</p>`; }
+})();
+
+$('f').onsubmit = async ev => {
+  ev.preventDefault();
+  const no = $('no').value.trim().toUpperCase(), ph = $('ph').value.replace(/[^0-9]/g,'');
+  if(!no || ph.length<10){ $('err').textContent = '신청번호와 연락처를 모두 입력해 주세요.'; return; }
+  const btn = ev.submitter || $('f').querySelector('button');
+  btn.disabled = true; btn.textContent = '조회 중…';
+  try {
+    const found = await lookupOrder(no, ph);
+    $('err').textContent = found.length ? '' : '일치하는 신청 내역이 없습니다. 신청번호와 연락처를 다시 확인해 주세요.';
+    $('orders').innerHTML = found.map(card).join('');
+  } catch(err) {
+    $('err').textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '조회하기';
+  }
+};
+</script>
+</body>
+</html>

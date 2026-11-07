@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>개인정보처리방침 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>.doc{max-width:760px;padding-bottom:40px}.doc h2{font-family:var(--body);font-size:1.08rem;margin:28px 0 8px}.doc p,.doc li{color:var(--muted)}.doc table{width:100%;border-collapse:collapse;font-size:.9rem}.doc td,.doc th{border:1px solid var(--line);padding:8px;text-align:left}</style>
+</head>
+<body>
+<main class="wrap doc">
+  <div class="page-head"><h1>개인정보처리방침</h1><p class="small">시행일: (날짜 입력)</p></div>
+  <p class="notice">아래는 기본 양식입니다. 실제로 수집하는 항목과 보관 기간에 맞게 고쳐 주세요.</p>
+  <h2>1. 수집하는 개인정보</h2>
+  <div style="overflow-x:auto"><table><tr><th>구분</th><th>항목</th><th>목적</th></tr>
+    <tr><td>주문 신청</td><td>이름, 연락처, 설치 주소, 희망 설치일</td><td>견적 확정, 설치 일정 안내, 방문 설치</td></tr>
+    <tr><td>상담</td><td>카카오톡 채널 대화 내용</td><td>문의 응대</td></tr></table></div>
+  <h2>2. 보관 기간</h2><p>주문 관련 정보는 거래 종료 후 전자상거래 관련 법령에서 정한 기간(계약·결제 기록 5년, 소비자 불만 처리 기록 3년) 동안 보관한 뒤 파기합니다.</p>
+  <h2>3. 제3자 제공</h2><p>설치 진행을 위해 설치 기사에게 이름, 연락처, 주소를 제공할 수 있으며, 그 외에는 법령에 따른 경우를 제외하고 제공하지 않습니다.</p>
+  <h2>4. 이용자의 권리</h2><p>이용자는 언제든지 자신의 개인정보 열람, 수정, 삭제, 처리 정지를 요청할 수 있습니다. 아래 보호책임자에게 연락해 주세요.</p>
+  <h2>5. 개인정보 보호책임자</h2><p id="officer"></p>
+</main>
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script>document.getElementById('officer').textContent = `${SITE.privacyOfficer} · ${SITE.email} · ${SITE.tel}`;</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>예상 견적 계산 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.est{display:grid;grid-template-columns:1fr 360px;gap:32px;align-items:start;padding-bottom:40px}
+.est>*{min-width:0}
+.step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:grid;gap:16px}
+.step+.step{margin-top:16px}
+.step h2{font-family:var(--body);font-size:1.1rem;display:flex;align-items:center;gap:10px}
+.step h2 b{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-size:.85rem}
+.sub-h{font-size:.88rem;font-weight:600;color:var(--muted);margin:0}
+.dims{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.unit{display:flex;gap:6px}
+.opts{display:grid;gap:4px}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.opt:last-child{border-bottom:0}
+.opt .nm{display:grid}
+.opt .nm small{color:var(--muted);font-size:.8rem}
+.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-shrink:0}
+.qty button{width:34px;height:34px;border:0;background:var(--surface);color:var(--fg);font-size:1.1rem;cursor:pointer}
+.qty output{width:34px;text-align:center;font-variant-numeric:tabular-nums}
+.check{display:flex;gap:10px;align-items:center;flex-direction:row;color:var(--fg);font-size:.95rem}
+.check input{width:20px;height:20px}
+.summary{position:sticky;top:84px;display:grid;gap:14px}
+.summary .total{font-family:var(--display);font-size:2rem;color:var(--accent);font-variant-numeric:tabular-nums}
+.summary table{width:100%;border-collapse:collapse;font-size:.88rem}
+.summary td{padding:6px 0;border-bottom:1px dashed var(--line)}
+.summary td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.plan{background:var(--surface);border-radius:12px;padding:10px;color:var(--fg)}
+.plan svg{width:100%;height:auto;display:block}
+.regions{font-size:.82rem;color:var(--muted);columns:2;margin:0;padding-left:18px}
+.done{display:grid;gap:10px;text-align:center}
+.done .no{font-family:var(--display);font-size:1.6rem;color:var(--accent);user-select:all}
+@media (max-width:900px){.est{grid-template-columns:1fr}.summary{position:static}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <p class="eyebrow">ESTIMATE</p>
+    <h1>예상 견적 계산</h1>
+    <p class="lead">다섯 단계를 채우면 예상 금액과 평면 도면이 바로 나옵니다. 실제 금액은 상담 후 도면 확정 단계에서 정해집니다.</p>
+  </div>
+
+  <div class="est">
+    <form id="f" novalidate>
+      <section class="step">
+        <h2><b>1</b>용도 &amp; 형태</h2>
+        <p class="sub-h">용도</p>
+        <div class="chips" data-group="use"></div>
+        <p class="sub-h">형태 <a href="cases.html" class="small" style="margin-left:6px">시공 예시 보기</a></p>
+        <div class="chips" data-group="shape"></div>
+      </section>
+
+      <section class="step">
+        <h2><b>2</b>치수 입력</h2>
+        <div class="unit chips" data-group="unit"></div>
+        <div class="dims" id="dims"></div>
+        <label for="h">천장 높이<input id="h" type="number" inputmode="numeric" value="2300"></label>
+        <p class="small" id="dimHint"></p>
+      </section>
+
+      <section class="step">
+        <h2><b>3</b>옵션 · 수량 선택</h2>
+        <div class="dims">
+          <label for="frame">프레임 색상<select id="frame"></select></label>
+          <label for="shelf">선반 색상<select id="shelf"></select></label>
+        </div>
+        <div id="optGroups"></div>
+      </section>
+
+      <section class="step">
+        <h2><b>4</b>배송 지역</h2>
+        <label for="region">지역 선택<select id="region"></select></label>
+        <details><summary class="small">지역별 추가 요금 보기</summary><ul class="regions" id="regionList"></ul></details>
+      </section>
+
+      <section class="step">
+        <h2><b>5</b>신축아파트 확인</h2>
+        <label class="check" for="newApt"><input type="checkbox" id="newApt">입주 전 신축아파트입니다 (사전점검·입주 일정에 맞춰 방문)</label>
+        <p class="small">신축아파트는 관리사무소 작업 신고와 엘리베이터 보양이 필요해 일정 조율이 따로 진행됩니다.</p>
+      </section>
+    </form>
+
+    <aside class="summary">
+      <div class="card" style="display:grid;gap:14px">
+        <div>
+          <div class="small">예상 금액 (VAT 포함)</div>
+          <div class="total" id="total">0원</div>
+        </div>
+        <div class="plan" id="plan"></div>
+        <table id="breakdown"></table>
+        <button class="btn primary block" id="orderBtn" type="button">주문 신청하기</button>
+        <a class="btn block" href="#" id="kakaoBtn" target="_blank" rel="noopener">카카오 상담</a>
+        <p class="small">※ 단가는 예시 값입니다. js/estimate-price.js 에서 실제 판매가로 바꿔 주세요.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="modal" id="orderModal" hidden>
+  <div class="box">
+    <button class="close" type="button" data-close aria-label="닫기">×</button>
+    <div id="orderForm">
+      <h2 style="margin-bottom:6px">주문 신청</h2>
+      <p class="small" style="margin:0 0 16px">신청 후 발급되는 신청번호를 카카오톡 채널로 보내 주세요.</p>
+      <div style="display:grid;gap:12px">
+        <label for="oName">이름<input id="oName" autocomplete="name"></label>
+        <label for="oPhone">연락처<input id="oPhone" inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></label>
+        <label for="oAddr">설치 주소<input id="oAddr" placeholder="시·구·동, 아파트명"></label>
+        <label for="oDate">희망 설치일<input id="oDate" type="date"></label>
+        <label for="oMemo">요청 사항<textarea id="oMemo" rows="3"></textarea></label>
+        <label class="check" for="oAgree"><input type="checkbox" id="oAgree">개인정보 수집·이용에 동의합니다 (<a href="privacy.html" target="_blank">보기</a>)</label>
+        <p class="small" id="oErr" style="color:var(--warn);margin:0"></p>
+        <button class="btn primary block" id="submitOrder" type="button">신청하기</button>
+      </div>
+    </div>
+    <div class="done" id="orderDone" hidden>
+      <h2>신청이 접수되었습니다</h2>
+      <p class="muted" style="margin:0">아래 신청번호를 카카오톡 채널로 보내 주세요.</p>
+      <div class="no" id="orderNo"></div>
+      <a class="btn primary" href="#" id="kakaoAfter" target="_blank" rel="noopener">카카오 채널로 보내기</a>
+      <a class="btn" href="my.html">주문 조회로 이동</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/estimate-price.js"></script>
+<script src="js/estimate.js"></script>
+</body>
+</html>

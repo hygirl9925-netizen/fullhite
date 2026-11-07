@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>관리자 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+body{padding-bottom:0}
+.adm-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-block:28px 18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:2px}
+.stat b{font-family:var(--display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.82rem;color:var(--muted)}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs button{background:none;border:0;padding:10px 16px;font:inherit;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--accent)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+.tools input{max-width:280px}
+.chip .n{font-size:.78rem;opacity:.75;margin-left:4px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table.tbl{width:100%;border-collapse:collapse;font-size:.9rem;min-width:820px}
+.tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:.8rem;padding:11px 12px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover{background:var(--surface)}
+.tbl td.num{text-align:right}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.s0{background:#fde8d6;color:#8a4a12}.s1{background:#e3ecfb;color:#24508f}.s2{background:#ece4f7;color:#5b3a8c}.s3{background:#dff2e6;color:#23683f}.s4{background:#eeeeee;color:#666}
+:root[data-theme="dark"] .pill{filter:brightness(.85)}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+.drawer{position:fixed;inset:0;z-index:40;display:flex;justify-content:flex-end;background:rgba(20,14,10,.45)}
+.drawer .panel{width:min(520px,100%);height:100%;background:var(--bg);overflow:auto;padding:24px max(20px,env(safe-area-inset-right,0px)) 40px 22px;display:grid;gap:18px;align-content:start}
+.drawer h3{font-family:var(--body);font-size:.95rem;color:var(--muted);margin:0}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:6px 12px;font-size:.93rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;word-break:break-all}
+.rows{width:100%;border-collapse:collapse;font-size:.88rem}
+.rows td{padding:6px 0;border-bottom:1px dashed var(--line)}
+.rows td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.9rem}
+.note small{display:block;color:var(--muted);font-size:.76rem;margin-top:4px}
+.gate{max-width:480px;margin:60px auto;text-align:center;display:grid;gap:16px}
+.uid{font-family:ui-monospace,Consolas,monospace;font-size:.85rem;background:var(--surface);padding:10px;border-radius:8px;user-select:all;word-break:break-all}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.9rem;z-index:50}
+</style>
+</head>
+<body>
+<main class="wrap" id="app">
+  <div class="gate" id="gate"><p class="muted">확인 중…</p></div>
+
+  <div id="admin" hidden>
+    <div class="adm-top">
+      <div><p class="eyebrow">ADMIN</p><h1 style="font-size:1.7rem">관리자</h1></div>
+      <div style="display:flex;gap:8px"><button class="btn" id="refresh" type="button">새로고침</button><button class="btn" id="csv" type="button">엑셀(CSV) 내려받기</button></div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="orders">주문</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="members">회원</button>
+    </div>
+
+    <section id="tab-orders">
+      <div class="tools">
+        <div class="chips" id="statusChips"></div>
+        <input id="q" type="search" placeholder="이름, 연락처, 신청번호 검색" aria-label="주문 검색">
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>신청번호</th><th>신청일</th><th>이름</th><th>연락처</th><th>지역</th><th>구성</th><th>희망일</th><th class="num">예상 금액</th><th>상태</th><th>회원</th></tr></thead>
+        <tbody id="orderRows"></tbody>
+      </table></div>
+    </section>
+
+    <section id="tab-members" hidden>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>이름</th><th>이메일</th><th>가입 방법</th><th>가입일</th><th>최근 로그인</th><th class="num">주문 수</th></tr></thead>
+        <tbody id="memberRows"></tbody>
+      </table></div>
+    </section>
+  </div>
+</main>
+
+<div class="drawer" id="drawer" hidden><div class="panel" id="panel"></div></div>
+
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const STATUSES = ['신청 접수','도면 확정·결제','일정 확정','설치 완료','취소'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pill = s => `<span class="pill s${STATUSES.indexOf(s)}">${esc(s)}</span>`;
+const fmtPhone = p => String(p||'').replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+const day = d => d ? String(d).slice(0,10) : '';
+let ORDERS = [], filter = '전체';
+
+function toast(msg){
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.append(t); setTimeout(()=>t.remove(), 2200);
+}
+
+/* 1) 접근 확인 */
+(async () => {
+  const u = await currentUser();
+  if(!u){
+    $('gate').innerHTML = `<h1 style="font-size:1.6rem">관리자 로그인</h1><p class="muted" style="margin:0">관리자로 등록된 카카오 계정으로 로그인하세요.</p>
+      <a class="btn kakao-btn lg" href="login.html?next=admin.html">카카오로 로그인</a>`;
+    return;
+  }
+  const { data: ok } = await sb.rpc('is_admin');
+  if(!ok){
+    $('gate').innerHTML = `<h1 style="font-size:1.6rem">관리자 권한이 없습니다</h1>
+      <p class="muted" style="margin:0">${esc(displayName(u))}님 계정은 아직 관리자로 등록되지 않았습니다. 아래 회원 번호를 개발 담당자에게 전달하면 관리자로 등록됩니다.</p>
+      <div class="uid">${esc(u.id)}</div><a class="btn" href="index.html">홈으로</a>`;
+    return;
+  }
+  $('gate').hidden = true; $('admin').hidden = false;
+  loadOrders(); loadMembers();
+})();
+
+/* 2) 주문 */
+async function loadOrders(){
+  const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending:false }).limit(1000);
+  if(error){ $('orderRows').innerHTML = `<tr><td colspan="10" class="empty">${esc(error.message)}</td></tr>`; return; }
+  ORDERS = data || [];
+  renderStats(); renderChips(); renderOrders();
+}
+
+function renderStats(){
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone:'Asia/Seoul' });
+  const month = today.slice(0,7);
+  const todayN = ORDERS.filter(o => new Date(o.created_at).toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'}) === today).length;
+  const active = ORDERS.filter(o => !['설치 완료','취소'].includes(o.status)).length;
+  const monthSum = ORDERS.filter(o => o.status!=='취소' && new Date(o.created_at).toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'}).startsWith(month))
+    .reduce((s,o)=>s+(o.total||0),0);
+  $('stats').innerHTML = [
+    ['오늘 신청', todayN+'건'], ['진행 중', active+'건'], ['이번 달 예상 매출', won(monthSum)], ['전체 주문', ORDERS.length+'건']
+  ].map(([k,v])=>`<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+}
+
+function renderChips(){
+  const cnt = s => s==='전체' ? ORDERS.length : ORDERS.filter(o=>o.status===s).length;
+  $('statusChips').innerHTML = ['전체',...STATUSES].map(s=>`<button type="button" class="chip" aria-pressed="${filter===s}" data-s="${s}">${s}<span class="n">${cnt(s)}</span></button>`).join('');
+}
+$('statusChips').onclick = e => { const b = e.target.closest('.chip'); if(!b) return; filter = b.dataset.s; renderChips(); renderOrders(); };
+$('q').oninput = () => renderOrders();
+
+function visible(){
+  const kw = $('q').value.trim().replace(/-/g,'').toLowerCase();
+  return ORDERS.filter(o => (filter==='전체' || o.status===filter) &&
+    (!kw || [o.order_no, o.name, o.phone].some(v => String(v||'').replace(/-/g,'').toLowerCase().includes(kw))));
+}
+
+function renderOrders(){
+  const list = visible();
+  $('orderRows').innerHTML = list.length ? list.map(o => {
+    const e = o.estimate || {};
+    return `<tr data-id="${o.id}">
+      <td><b>${esc(o.order_no)}</b></td><td>${day(o.created_at)}</td><td>${esc(o.name)}</td><td>${fmtPhone(o.phone)}</td>
+      <td>${esc(e.region||'')}</td><td>${esc([e.use,e.shape].filter(Boolean).join(' · '))}</td><td>${day(o.wish_date)}</td>
+      <td class="num">${won(o.total||0)}</td><td>${pill(o.status)}</td><td>${o.user_id?'회원':'비회원'}</td></tr>`;
+  }).join('') : `<tr><td colspan="10" class="empty">${ORDERS.length ? '조건에 맞는 주문이 없습니다.' : '아직 들어온 주문이 없습니다. 견적 페이지에서 주문이 들어오면 여기에 표시됩니다.'}</td></tr>`;
+}
+$('orderRows').onclick = e => { const tr = e.target.closest('tr[data-id]'); if(tr) openOrder(+tr.dataset.id); };
+
+/* 3) 주문 상세 */
+async function openOrder(id){
+  const o = ORDERS.find(x=>x.id===id); if(!o) return;
+  const e = o.estimate || {};
+  $('panel').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:10px">
+      <div><p class="eyebrow">${day(o.created_at)} 신청</p><h2 style="font-size:1.4rem">${esc(o.order_no)}</h2></div>
+      <button class="btn" type="button" data-close>닫기</button>
+    </div>
+    <label for="st">진행 상태<select id="st">${STATUSES.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></label>
+    <div><h3>고객 정보</h3><dl class="kv" style="margin-top:8px">
+      <dt>이름</dt><dd>${esc(o.name)} ${o.user_id?'<span class="tag">카카오 회원</span>':''}</dd>
+      <dt>연락처</dt><dd>${fmtPhone(o.phone)}</dd>
+      <dt>주소</dt><dd>${esc(o.address)||'-'}</dd>
+      <dt>희망일</dt><dd>${day(o.wish_date)||'-'}</dd>
+      <dt>요청 사항</dt><dd>${esc(o.memo)||'-'}</dd></dl></div>
+    <div><h3>견적 내역</h3>
+      <p class="small" style="margin:6px 0">${esc([e.use, e.shape, colorName(FRAME_COLORS,e.frame)+' 프레임', colorName(SHELF_COLORS,e.shelf)+' 선반', e.region, e.newApt?'신축아파트':''].filter(Boolean).join(' · '))}</p>
+      <p class="small" style="margin:0 0 6px">치수: ${esc((e.walls||[]).map(([k,v])=>`${k} ${v}${e.unit||''}`).join(', '))} / 천장 ${esc(e.height||'')}${esc(e.unit||'')}</p>
+      <table class="rows">${(e.rows||[]).map(([n,v])=>`<tr><td>${esc(n)}</td><td>${won(v)}</td></tr>`).join('')}
+        <tr><td><b>예상 금액</b></td><td><b>${won(o.total||0)}</b></td></tr></table></div>
+    <div><h3>관리자 메모 <span class="small">(고객에게 보이지 않음)</span></h3>
+      <div id="notes" style="display:grid;gap:8px;margin:8px 0"></div>
+      <textarea id="noteIn" rows="2" placeholder="예: 실측 11/12 오후 2시 확정"></textarea>
+      <button class="btn primary" id="noteAdd" type="button" style="margin-top:8px">메모 추가</button></div>`;
+  $('drawer').hidden = false;
+
+  $('st').onchange = async ev => {
+    const next = ev.target.value;
+    const { error } = await sb.from('orders').update({ status: next }).eq('id', id);
+    if(error){ toast('저장하지 못했습니다: ' + error.message); ev.target.value = o.status; return; }
+    o.status = next; renderStats(); renderChips(); renderOrders(); toast(`상태를 '${next}'(으)로 바꿨습니다`);
+  };
+  loadNotes(id);
+  $('noteAdd').onclick = async () => {
+    const body = $('noteIn').value.trim(); if(!body) return;
+    const { error } = await sb.from('order_notes').insert({ order_id:id, body });
+    if(error){ toast('메모를 저장하지 못했습니다'); return; }
+    $('noteIn').value = ''; loadNotes(id);
+  };
+}
+async function loadNotes(id){
+  const { data } = await sb.from('order_notes').select('body,created_at').eq('order_id', id).order('created_at');
+  $('notes').innerHTML = (data||[]).length ? data.map(n=>`<div class="note">${esc(n.body)}<small>${new Date(n.created_at).toLocaleString('ko-KR')}</small></div>`).join('')
+    : '<p class="small" style="margin:0">아직 메모가 없습니다.</p>';
+}
+$('drawer').onclick = e => { if(e.target.id==='drawer' || e.target.hasAttribute('data-close')) $('drawer').hidden = true; };
+document.addEventListener('keydown', e => { if(e.key==='Escape') $('drawer').hidden = true; });
+
+/* 4) 회원 */
+async function loadMembers(){
+  const { data, error } = await sb.rpc('admin_members');
+  if(error){ $('memberRows').innerHTML = `<tr><td colspan="6" class="empty">${esc(error.message)}</td></tr>`; return; }
+  $('memberRows').innerHTML = (data||[]).length ? data.map(m=>`<tr style="cursor:default">
+    <td>${esc(m.nickname||'-')}</td><td>${esc(m.email||'-')}</td><td>${m.provider==='kakao'?'카카오':esc(m.provider)}</td>
+    <td>${day(m.created_at)}</td><td>${day(m.last_sign_in_at)}</td><td class="num">${m.order_count}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">아직 가입한 회원이 없습니다.</td></tr>';
+}
+
+/* 5) 탭·새로고침·CSV */
+document.querySelector('.tabs').onclick = e => {
+  const b = e.target.closest('button[data-tab]'); if(!b) return;
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b));
+  $('tab-orders').hidden = b.dataset.tab!=='orders'; $('tab-members').hidden = b.dataset.tab!=='members';
+};
+$('refresh').onclick = () => { loadOrders(); loadMembers(); toast('새로 불러왔습니다'); };
+$('csv').onclick = () => {
+  const head = ['신청번호','신청일','이름','연락처','주소','희망일','용도','형태','지역','예상금액','상태','요청사항'];
+  const rows = visible().map(o => { const e=o.estimate||{}; return [o.order_no, day(o.created_at), o.name, fmtPhone(o.phone), o.address, day(o.wish_date), e.use, e.shape, e.region, o.total, o.status, o.memo]; });
+  const csv = '﻿' + [head, ...rows].map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+  a.download = `주문목록_${new Date().toLocaleDateString('sv-SE')}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+</script>
+</body>
+</html>

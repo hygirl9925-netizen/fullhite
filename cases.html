@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시공사례 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.tabs a{padding:10px 16px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+.tabs a.on{color:var(--fg);border-color:var(--accent)}
+.filters{display:grid;gap:14px;margin-bottom:22px}
+.frow{display:grid;grid-template-columns:90px 1fr;gap:12px;align-items:start}
+.frow>span{font-size:.88rem;font-weight:600;color:var(--muted);padding-top:8px}
+@media (max-width:600px){.frow{grid-template-columns:1fr;gap:6px}.frow>span{padding:0}}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.toggle{display:flex;gap:8px;align-items:center;flex-direction:row;color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.case{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:grid;grid-template-rows:auto 1fr}
+.case .thumb{aspect-ratio:4/3;max-width:100%;background:var(--surface);display:grid;place-items:center;color:var(--fg);padding:14px}
+.case .thumb img{width:100%;height:100%;object-fit:cover}
+.case .thumb svg{width:100%;height:auto}
+.case .body{padding:16px 18px 18px;display:grid;gap:8px;align-content:start}
+.case .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.case .no{font-weight:600}
+.case .price{font-family:var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+.case .colors{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--muted)}
+.dot{width:14px;height:14px;border-radius:50%;border:1px solid var(--line);display:inline-block}
+.case p{margin:0;font-size:.88rem;color:var(--muted)}
+.case .tags{display:flex;gap:6px;flex-wrap:wrap}
+.case button{justify-self:start;background:none;border:0;padding:0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer}
+.empty{padding:60px 0;text-align:center;color:var(--muted)}
+.more{display:flex;justify-content:center;margin-top:28px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <p class="eyebrow">GALLERY</p>
+    <h1>시공사례</h1>
+    <p class="lead">고객님 댁에 설치한 구성과 금액을 그대로 공개합니다. 비슷한 공간을 찾아 견적의 기준으로 삼아 보세요.</p>
+  </div>
+  <nav class="tabs"><a href="cases.html" class="on">시공사례</a><a href="reviews.html">시공후기</a></nav>
+
+  <div class="filters" id="filters"></div>
+  <div class="bar">
+    <strong class="num" id="count"></strong>
+    <label class="toggle" for="hasDrawing"><input type="checkbox" id="hasDrawing" style="width:18px;height:18px">도면 있는 사례만</label>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="more"><button class="btn" id="moreBtn" type="button">더 보기</button></div>
+</main>
+
+<div class="modal" id="detail" hidden><div class="box" id="detailBox"></div></div>
+
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script>
+const F = { frame:'전체', shelf:'전체', use:'전체', shape:'전체', price:'전체' };
+const PRICE_BANDS = { '~50만':[0,500000], '~100만':[500000,1000000], '~150만':[1000000,1500000], '150만 초과':[1500000,1e12] };
+const GROUPS = [
+  ['frame','프레임 색상',['전체',...FRAME_COLORS.map(c=>c.name)]],
+  ['shelf','선반 색상',['전체',...SHELF_COLORS.map(c=>c.name)]],
+  ['use','용도',['전체','드레스룸','팬트리']],
+  ['shape','형태',['전체','ㅡ자','ㄱ자','ㄷ자','ㅁ자','11자']],
+  ['price','가격',['전체',...Object.keys(PRICE_BANDS)]]
+];
+let shown = 8;
+const $ = id => document.getElementById(id);
+
+function renderFilters(){
+  $('filters').innerHTML = GROUPS.map(([k,label,vals])=>`<div class="frow"><span>${label}</span><div class="chips" data-k="${k}">${
+    vals.map(v=>`<button type="button" class="chip" aria-pressed="${F[k]===v}" data-v="${v}">${v}</button>`).join('')}</div></div>`).join('');
+}
+$('filters').onclick = e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  F[b.parentElement.dataset.k] = b.dataset.v; shown = 8; renderFilters(); render();
+};
+$('hasDrawing').onchange = () => { shown = 8; render(); };
+
+function match(c){
+  if(F.frame!=='전체' && colorName(FRAME_COLORS,c.frame)!==F.frame) return false;
+  if(F.shelf!=='전체' && colorName(SHELF_COLORS,c.shelf)!==F.shelf) return false;
+  if(F.use!=='전체' && c.use!==F.use) return false;
+  if(F.shape!=='전체' && c.shape!==F.shape) return false;
+  if(F.price!=='전체'){ const [a,b] = PRICE_BANDS[F.price]; if(c.price<a || c.price>=b) return false; }
+  if($('hasDrawing').checked && !c.drawing) return false;
+  return true;
+}
+const thumb = c => c.photo ? `<img src="${c.photo}" alt="${c.area} ${c.use} 시공 사진" loading="lazy">`
+  : hangerSVG(c.shape, colorHex(FRAME_COLORS,c.frame), colorHex(SHELF_COLORS,c.shelf));
+
+function render(){
+  const list = CASES.filter(match);
+  $('count').textContent = `총 ${list.length}건`;
+  $('grid').innerHTML = list.length ? list.slice(0,shown).map(c=>`<article class="case">
+    <div class="thumb">${thumb(c)}</div>
+    <div class="body">
+      <div class="top"><span class="no">No.${c.no}</span><span class="price">${won(c.price)}</span></div>
+      <div class="colors"><i class="dot" style="background:${colorHex(FRAME_COLORS,c.frame)}"></i>${colorName(FRAME_COLORS,c.frame)}
+        <i class="dot" style="background:${colorHex(SHELF_COLORS,c.shelf)};margin-left:6px"></i>${colorName(SHELF_COLORS,c.shelf)}</div>
+      <p>${c.parts}</p>
+      <p>${c.area}</p>
+      <div class="tags"><span class="tag">${c.use}</span><span class="tag">${c.shape}</span>${c.drawing?'<span class="tag">도면</span>':''}</div>
+      <button type="button" data-no="${c.no}">자세히 보기 →</button>
+    </div></article>`).join('') : '<p class="empty">조건에 맞는 사례가 없습니다. 필터를 줄여 보세요.</p>';
+  $('moreBtn').hidden = list.length <= shown;
+}
+$('moreBtn').onclick = () => { shown += 8; render(); };
+
+$('grid').onclick = e => {
+  const b = e.target.closest('button[data-no]'); if(!b) return;
+  const c = CASES.find(x=>x.no==b.dataset.no);
+  const rv = REVIEWS.find(r=>r.case===c.no);
+  $('detailBox').innerHTML = `<button class="close" type="button" data-close aria-label="닫기">×</button>
+    <p class="eyebrow">No.${c.no}</p><h2 style="margin:4px 0 14px">${c.area} ${c.use}</h2>
+    <div style="background:var(--surface);border-radius:14px;padding:14px">${thumb(c)}</div>
+    <table style="width:100%;margin-top:16px;border-collapse:collapse;font-size:.93rem">
+      ${[['형태',c.shape],['프레임',colorName(FRAME_COLORS,c.frame)],['선반',colorName(SHELF_COLORS,c.shelf)],['구성',c.parts],['시공 금액',won(c.price)]]
+        .map(([k,v])=>`<tr><td style="padding:8px 0;color:var(--muted);width:90px;border-bottom:1px solid var(--line)">${k}</td><td style="border-bottom:1px solid var(--line)">${v}</td></tr>`).join('')}
+    </table>
+    ${rv?`<div class="notice" style="margin-top:16px"><b>${'★'.repeat(rv.stars)} ${rv.title}</b><br>${rv.body}</div>`:''}
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap"><a class="btn primary" href="estimate.html">비슷하게 견적 내기</a><a class="btn" href="${SITE.kakao}" target="_blank" rel="noopener">카카오 상담</a></div>`;
+  $('detail').hidden = false;
+};
+$('detail').onclick = e => { if(e.target.id==='detail' || e.target.hasAttribute('data-close')) $('detail').hidden = true; };
+document.addEventListener('keydown', e => { if(e.key==='Escape') $('detail').hidden = true; });
+
+renderFilters(); render();
+</script>
+</body>
+</html>

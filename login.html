@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>로그인 | 라떼드레스룸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.login{max-width:420px;margin:56px auto 40px;display:grid;gap:22px;text-align:center}
+.login .card{display:grid;gap:14px;padding:32px 26px}
+.login ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;text-align:left;font-size:.92rem;color:var(--muted)}
+.login li::before{content:"✓";color:var(--accent);font-weight:700;margin-right:8px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="login">
+    <div style="display:grid;gap:8px">
+      <p class="eyebrow">LOGIN</p>
+      <h1 style="font-size:1.9rem">3초 만에 시작하기</h1>
+      <p class="muted" style="margin:0">카카오 계정으로 가입과 로그인이 한 번에 됩니다.</p>
+    </div>
+    <div class="card">
+      <button class="btn kakao-btn lg" id="kakao" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+        카카오로 시작하기
+      </button>
+      <p class="small" id="err" style="color:var(--warn);margin:0"></p>
+      <ul>
+        <li>내 견적·주문 내역을 한곳에서 확인</li>
+        <li>신청번호 없이 진행 상황 조회</li>
+        <li>설치 일정 변경 알림</li>
+      </ul>
+      <div class="or">또는</div>
+      <a class="btn block" href="my.html#guest">비회원 주문 조회</a>
+    </div>
+    <p class="small">로그인하면 <a href="terms.html">이용약관</a>과 <a href="privacy.html">개인정보처리방침</a>에 동의한 것으로 봅니다.</p>
+  </div>
+</main>
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const next = new URLSearchParams(location.search).get('next') || 'my.html';
+currentUser().then(u => { if(u) location.replace(next); });
+document.getElementById('kakao').onclick = async () => {
+  try { await kakaoLogin(next); }
+  catch(e){ document.getElementById('err').textContent = e.message; }
+};
+</script>
+</body>
+</html>
