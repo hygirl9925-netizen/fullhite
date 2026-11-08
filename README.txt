@@ -10,7 +10,8 @@ cases.html     갤러리 > 시공사례 (필터 + 상세)
 reviews.html   갤러리 > 시공후기
 qa.html        Q&A (카테고리 + 검색)
 my.html        마이 (회원: 내 주문 / 비회원: 신청번호로 조회)
-login.html     카카오로 시작하기
+login.html     로그인 (카카오 / 전화번호)
+signup.html    회원가입 (전화번호 + 약관 동의)
 admin.html     관리자 (주문 관리·상태 변경·메모·회원 목록·CSV)
 terms.html     이용약관
 privacy.html   개인정보처리방침
@@ -47,3 +48,11 @@ terms.html, privacy.html  약관 양식
 [관리자 등록]
 사장님이 사이트에서 카카오로 한 번 로그인한 뒤 admin.html 에 들어가면 '회원 번호'가 보입니다.
 그 번호를 Claude에게 알려 주면 관리자로 등록해 드립니다.
+
+[전화번호 회원가입 설정 — 한 번만]
+supabase.com → latte-dressroom → Authentication → Sign In / Providers → Email
+'Confirm email' 을 끄고 저장 (전화번호 회원은 이메일 인증을 쓰지 않습니다)
+
+[앱 설치]
+안드로이드 크롬에서는 로그인·마이 화면 위에 '앱 설치' 버튼이 나타납니다.
+아이폰은 사파리 공유 버튼 → '홈 화면에 추가'.

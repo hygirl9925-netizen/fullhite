@@ -4,40 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>로그인 | 라떼드레스룸</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#5b3a29">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
-<style>
-.login{max-width:420px;margin:56px auto 40px;display:grid;gap:22px;text-align:center}
-.login .card{display:grid;gap:14px;padding:32px 26px}
-.login ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;text-align:left;font-size:.92rem;color:var(--muted)}
-.login li::before{content:"✓";color:var(--accent);font-weight:700;margin-right:8px}
-.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
-.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
-</style>
 </head>
 <body>
+<div class="install-bar" id="installBar" hidden>
+  <div class="wrap"><span>홈 화면에 추가하고 앱처럼 쓰세요</span><button class="btn" type="button" data-install>앱 설치</button></div>
+</div>
 <main class="wrap">
-  <div class="login">
-    <div style="display:grid;gap:8px">
-      <p class="eyebrow">LOGIN</p>
-      <h1 style="font-size:1.9rem">3초 만에 시작하기</h1>
-      <p class="muted" style="margin:0">카카오 계정으로 가입과 로그인이 한 번에 됩니다.</p>
-    </div>
-    <div class="card">
-      <button class="btn kakao-btn lg" id="kakao" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
-        카카오로 시작하기
-      </button>
-      <p class="small" id="err" style="color:var(--warn);margin:0"></p>
-      <ul>
-        <li>내 견적·주문 내역을 한곳에서 확인</li>
-        <li>신청번호 없이 진행 상황 조회</li>
-        <li>설치 일정 변경 알림</li>
-      </ul>
-      <div class="or">또는</div>
-      <a class="btn block" href="my.html#guest">비회원 주문 조회</a>
-    </div>
-    <p class="small">로그인하면 <a href="terms.html">이용약관</a>과 <a href="privacy.html">개인정보처리방침</a>에 동의한 것으로 봅니다.</p>
+  <div class="auth">
+    <p class="intro"><b>로그인</b>카카오 또는 전화번호로<br>간편하게 서비스를 이용하세요.</p>
+
+    <button class="btn kakao-btn lg" id="kakao" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+      카카오로 시작하기
+    </button>
+    <p class="terms">카카오로 시작하면 <a href="terms.html">이용약관</a> 및 <a href="privacy.html">개인정보처리방침</a>에 동의한 것으로 봅니다.</p>
+
+    <div class="divider">또는 전화번호로 로그인</div>
+
+    <form class="card" id="f" novalidate>
+      <label for="phone">전화번호<input id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-1234-5678"></label>
+      <label for="pw">비밀번호
+        <span class="pw"><input id="pw" type="password" autocomplete="current-password" placeholder="6자 이상">
+          <button type="button" data-eye="pw" aria-label="비밀번호 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span>
+      </label>
+      <p class="err" id="err" role="alert"></p>
+      <button class="btn dark block" type="submit" id="loginBtn">로그인</button>
+      <p class="small" style="margin:0;text-align:center">비밀번호를 잊으셨다면 카카오톡 채널로 문의해 주세요.</p>
+    </form>
+
+    <p class="foot">계정이 없으신가요? <a href="signup.html" id="signupLink">회원가입</a></p>
+    <p class="foot"><a href="my.html#guest" style="font-weight:500">비회원 주문 조회</a></p>
   </div>
 </main>
 <script src="js/app.js"></script>
@@ -45,11 +46,27 @@
 <script src="js/db.js"></script>
 <script src="js/auth.js"></script>
 <script>
+const $ = id => document.getElementById(id);
 const next = new URLSearchParams(location.search).get('next') || 'my.html';
+$('signupLink').href = 'signup.html' + (next !== 'my.html' ? '?next=' + encodeURIComponent(next) : '');
 currentUser().then(u => { if(u) location.replace(next); });
-document.getElementById('kakao').onclick = async () => {
-  try { await kakaoLogin(next); }
-  catch(e){ document.getElementById('err').textContent = e.message; }
+
+$('phone').addEventListener('input', e => { e.target.value = fmtPhone(e.target.value) || e.target.value; });
+document.querySelectorAll('[data-eye]').forEach(b => b.onclick = () => {
+  const i = $(b.dataset.eye); i.type = i.type === 'password' ? 'text' : 'password';
+  b.setAttribute('aria-label', i.type === 'password' ? '비밀번호 보기' : '비밀번호 숨기기');
+});
+
+$('kakao').onclick = async () => {
+  $('err').textContent = '';
+  try { await kakaoLogin(next); } catch(e){ $('err').textContent = e.message; }
+};
+$('f').onsubmit = async ev => {
+  ev.preventDefault();
+  const btn = $('loginBtn');
+  $('err').textContent = ''; btn.disabled = true; btn.textContent = '로그인 중…';
+  try { await phoneLogin($('phone').value, $('pw').value); location.replace(next); }
+  catch(e){ $('err').textContent = e.message; btn.disabled = false; btn.textContent = '로그인'; }
 };
 </script>
 </body>

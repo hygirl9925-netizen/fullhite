@@ -98,7 +98,15 @@ calc();
 
 /* 주문 신청 */
 const modal = $('orderModal');
-$('orderBtn').onclick = () => { $('orderForm').hidden = false; $('orderDone').hidden = true; modal.hidden = false; };
+$('orderBtn').onclick = async () => {
+  $('orderForm').hidden = false; $('orderDone').hidden = true; modal.hidden = false;
+  // 로그인한 회원이면 이름·연락처 미리 채우기
+  const u = typeof currentUser === 'function' ? await currentUser() : null;
+  if(u){
+    if(!$('oName').value) $('oName').value = (u.user_metadata||{}).name || '';
+    if(!$('oPhone').value && userPhone(u)) $('oPhone').value = fmtPhone(userPhone(u));
+  }
+};
 modal.addEventListener('click', e => { if(e.target===modal || e.target.hasAttribute('data-close')) modal.hidden = true; });
 document.addEventListener('keydown', e => { if(e.key==='Escape') modal.hidden = true; });
 

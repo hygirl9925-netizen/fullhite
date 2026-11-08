@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>주문 조회 | 라떼드레스룸</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#5b3a29">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <style>
@@ -21,6 +24,9 @@
 </style>
 </head>
 <body>
+<div class="install-bar" id="installBar" hidden>
+  <div class="wrap"><span>홈 화면에 추가하고 앱처럼 쓰세요</span><button class="btn" type="button" data-install>앱 설치</button></div>
+</div>
 <main class="wrap">
   <div class="page-head">
     <p class="eyebrow">MY</p>
@@ -37,10 +43,7 @@
     <div class="orders" id="myOrders"></div>
   </section>
 
-  <section id="loginBox" class="card lookup" style="margin-bottom:24px" hidden>
-    <b>회원이신가요?</b>
-    <a class="btn kakao-btn lg" href="login.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오로 시작하기</a>
-  </section>
+  <p class="notice" id="loginBox" hidden>회원이시면 <a href="login.html"><b>로그인</b></a>하고 내 주문을 바로 확인하세요.</p>
 
   <h2 id="guest" style="font-size:1.25rem;margin:36px 0 14px">비회원 주문 조회</h2>
   <form class="card lookup" id="f">
@@ -73,12 +76,21 @@ function card(o){
 }
 (async () => {
   const u = await currentUser();
-  if(!u){ $('loginBox').hidden = false; return; }
+  if(!u){
+    // 마이 탭을 누르면 로그인 화면으로 (비회원 조회 링크로 들어온 경우만 이 화면 유지)
+    if(location.hash !== '#guest'){ location.replace('login.html'); return; }
+    $('title').textContent = '비회원 주문 조회';
+    $('sub').textContent = '주문 신청 때 받은 신청번호와 연락처로 진행 상황을 확인하세요.';
+    $('guest').hidden = true;
+    $('loginBox').hidden = false; return;
+  }
   $('member').hidden = false;
   $('title').textContent = `${displayName(u)}님`;
   $('sub').textContent = '주문 진행 상황과 견적 내역을 확인하세요.';
   $('uname').textContent = displayName(u);
-  $('uinfo').textContent = `카카오 로그인${u.email ? ' · ' + u.email : ''} · ${u.created_at.slice(0,10)} 가입`;
+  $('uinfo').textContent = isPhoneUser(u)
+    ? `전화번호 회원 · ${fmtPhone(userPhone(u))} · ${u.created_at.slice(0,10)} 가입`
+    : `카카오 회원${u.email ? ' · ' + u.email : ''} · ${u.created_at.slice(0,10)} 가입`;
   $('logoutBtn').onclick = logout;
   sb.rpc('is_admin').then(({data}) => { if(data) $('adminLink').hidden = false; });
   try {

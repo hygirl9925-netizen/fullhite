@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>관리자 | 라떼드레스룸</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#5b3a29">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <style>
@@ -77,7 +80,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.9rem;min-width:820px}
 
     <section id="tab-members" hidden>
       <div class="tbl-wrap"><table class="tbl">
-        <thead><tr><th>이름</th><th>이메일</th><th>가입 방법</th><th>가입일</th><th>최근 로그인</th><th class="num">주문 수</th></tr></thead>
+        <thead><tr><th>이름</th><th>전화번호</th><th>이메일</th><th>가입 방법</th><th>가입일</th><th>최근 로그인</th><th class="num">주문 수</th></tr></thead>
         <tbody id="memberRows"></tbody>
       </table></div>
     </section>
@@ -95,7 +98,6 @@ const STATUSES = ['신청 접수','도면 확정·결제','일정 확정','설�
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pill = s => `<span class="pill s${STATUSES.indexOf(s)}">${esc(s)}</span>`;
-const fmtPhone = p => String(p||'').replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
 const day = d => d ? String(d).slice(0,10) : '';
 let ORDERS = [], filter = '전체';
 
@@ -220,11 +222,13 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') $('drawer').hid
 /* 4) 회원 */
 async function loadMembers(){
   const { data, error } = await sb.rpc('admin_members');
-  if(error){ $('memberRows').innerHTML = `<tr><td colspan="6" class="empty">${esc(error.message)}</td></tr>`; return; }
+  if(error){ $('memberRows').innerHTML = `<tr><td colspan="7" class="empty">${esc(error.message)}</td></tr>`; return; }
   $('memberRows').innerHTML = (data||[]).length ? data.map(m=>`<tr style="cursor:default">
-    <td>${esc(m.nickname||'-')}</td><td>${esc(m.email||'-')}</td><td>${m.provider==='kakao'?'카카오':esc(m.provider)}</td>
+    <td>${esc(m.nickname||'-')}</td><td>${m.phone?fmtPhone(m.phone):'-'}</td>
+    <td>${esc(m.email && !String(m.email).endsWith('@'+PHONE_ID_DOMAIN) ? m.email : '-')}</td>
+    <td>${m.provider==='kakao'?'카카오':(m.provider==='phone'||String(m.email||'').endsWith('@'+PHONE_ID_DOMAIN))?'전화번호':esc(m.provider)}</td>
     <td>${day(m.created_at)}</td><td>${day(m.last_sign_in_at)}</td><td class="num">${m.order_count}</td></tr>`).join('')
-    : '<tr><td colspan="6" class="empty">아직 가입한 회원이 없습니다.</td></tr>';
+    : '<tr><td colspan="7" class="empty">아직 가입한 회원이 없습니다.</td></tr>';
 }
 
 /* 5) 탭·새로고침·CSV */

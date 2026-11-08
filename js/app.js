@@ -65,6 +65,7 @@ const NAV = [
   </div>`;
   document.body.append(footer);
 
+  if (['login.html','signup.html','admin.html'].includes(page)) return; // 로그인 화면에서는 상담 버튼 숨김
   const k = document.createElement('a');
   k.className = 'kakao'; k.href = SITE.kakao; k.target = '_blank'; k.rel = 'noopener';
   k.textContent = '카카오 상담';
@@ -110,3 +111,34 @@ function hangerSVG(shape, frameHex, shelfHex){
   }).join('');
   return `<svg viewBox="0 0 200 120" role="img" aria-label="${shape} 평면도"><rect x="4" y="4" width="192" height="112" rx="6" fill="none" stroke="currentColor" stroke-opacity=".15"/>${lines}</svg>`;
 }
+
+/* 앱 설치 (홈 화면에 추가) */
+let installPrompt = null;
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+function showInstallBar(){
+  const bar = document.getElementById('installBar');
+  if (bar && !isStandalone()) bar.hidden = false;
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; showInstallBar(); });
+window.addEventListener('appinstalled', () => { const b = document.getElementById('installBar'); if (b) b.hidden = true; });
+if (isIOS()) document.addEventListener('DOMContentLoaded', showInstallBar);
+document.addEventListener('click', async e => {
+  if (!e.target.closest('[data-install]')) return;
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => {});
+    installPrompt = null;
+  } else if (isIOS()) {
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.innerHTML = `<div class="box" style="max-width:380px;text-align:center"><button class="close" type="button" aria-label="닫기">×</button>
+      <h2 style="font-size:1.3rem;margin-bottom:10px">홈 화면에 추가하기</h2>
+      <p class="muted" style="margin:0">사파리 아래쪽 <b>공유 버튼(□↑)</b>을 누른 뒤<br><b>'홈 화면에 추가'</b>를 선택하세요.</p></div>`;
+    m.onclick = ev => { if (ev.target === m || ev.target.classList.contains('close')) m.remove(); };
+    document.body.append(m);
+  }
+});

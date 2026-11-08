@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>회원가입 | 라떼드레스룸</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#5b3a29">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="auth">
+    <p class="intro"><b>회원가입</b>가입하면 견적과 주문 진행 상황을 한곳에서 볼 수 있어요.</p>
+
+    <button class="btn kakao-btn lg" id="kakao" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+      카카오로 3초 만에 가입
+    </button>
+
+    <div class="divider">또는 전화번호로 가입</div>
+
+    <form class="card" id="f" novalidate>
+      <label for="name">이름<input id="name" autocomplete="name" placeholder="홍길동"></label>
+      <label for="phone">휴대폰 번호<input id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-1234-5678"></label>
+      <label for="pw">비밀번호 <span class="hint">6자 이상</span>
+        <span class="pw"><input id="pw" type="password" autocomplete="new-password">
+          <button type="button" data-eye="pw" aria-label="비밀번호 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span>
+      </label>
+      <label for="pw2">비밀번호 확인
+        <span class="pw"><input id="pw2" type="password" autocomplete="new-password">
+          <button type="button" data-eye="pw2" aria-label="비밀번호 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span>
+      </label>
+
+      <div class="agree">
+        <label class="all" for="aAll"><input type="checkbox" id="aAll">전체 동의</label>
+        <label for="a1"><input type="checkbox" id="a1" data-req>[필수] 이용약관 동의<a href="terms.html" target="_blank">보기</a></label>
+        <label for="a2"><input type="checkbox" id="a2" data-req>[필수] 개인정보 수집·이용 동의<a href="privacy.html" target="_blank">보기</a></label>
+        <label for="a3"><input type="checkbox" id="a3">[선택] 할인·이벤트 소식 받기</label>
+      </div>
+
+      <p class="err" id="err" role="alert"></p>
+      <button class="btn dark block" type="submit" id="joinBtn">가입하기</button>
+    </form>
+
+    <p class="foot">이미 계정이 있으신가요? <a href="login.html" id="loginLink">로그인</a></p>
+  </div>
+</main>
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const next = new URLSearchParams(location.search).get('next') || 'my.html';
+$('loginLink').href = 'login.html' + (next !== 'my.html' ? '?next=' + encodeURIComponent(next) : '');
+currentUser().then(u => { if(u) location.replace(next); });
+
+$('phone').addEventListener('input', e => { e.target.value = fmtPhone(e.target.value) || e.target.value; });
+document.querySelectorAll('[data-eye]').forEach(b => b.onclick = () => {
+  const i = $(b.dataset.eye); i.type = i.type === 'password' ? 'text' : 'password';
+});
+const boxes = ['a1','a2','a3'].map($);
+$('aAll').onchange = e => boxes.forEach(b => b.checked = e.target.checked);
+boxes.forEach(b => b.onchange = () => { $('aAll').checked = boxes.every(x => x.checked); });
+
+$('kakao').onclick = async () => {
+  $('err').textContent = '';
+  try { await kakaoLogin(next); } catch(e){ $('err').textContent = e.message; }
+};
+$('f').onsubmit = async ev => {
+  ev.preventDefault();
+  const err = m => { $('err').textContent = m; };
+  if($('pw').value !== $('pw2').value) return err('비밀번호가 서로 다릅니다. 다시 확인해 주세요.');
+  if(!$('a1').checked || !$('a2').checked) return err('필수 약관에 동의해 주세요.');
+  const btn = $('joinBtn');
+  err(''); btn.disabled = true; btn.textContent = '가입 중…';
+  try {
+    await phoneSignUp({ name:$('name').value, phone:$('phone').value, password:$('pw').value, marketing:$('a3').checked });
+    location.replace(next);
+  } catch(e){ err(e.message); btn.disabled = false; btn.textContent = '가입하기'; }
+};
+</script>
+</body>
+</html>
